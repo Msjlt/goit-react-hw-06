@@ -1,8 +1,11 @@
-import { useState, useEffect } from "react";
+import { useEffect } from "react";
 import ContactList from "../ContactList/ContactList";
 import SearchBox from "../SearchBox/SearchBox";
 import ContactForm from "../ContactForm/ContactForm";
-import { nanoid } from "nanoid";
+
+import { useDispatch, useSelector } from "react-redux";
+import { addContact, selectContacts } from "../../redux/contactsSlice";
+import { selectNameFilter, changeFilter } from "../../redux/filtersSlice";
 
 const initialContacts = [
   { id: "id-1", name: "Rosie Simpson", number: "459-12-56" },
@@ -11,29 +14,25 @@ const initialContacts = [
   { id: "id-4", name: "Annie Copeland", number: "227-91-26" },
 ];
 
-function App() {
-  const [contacts, setContacts] = useState([]);
-  const [filter, setFilter] = useState("");
+export default function App() {
+  const dispatch = useDispatch();
+  const contacts = useSelector(selectContacts);
+  const filter = useSelector(selectNameFilter);
 
   useEffect(() => {
-    const storedContacts = JSON.parse(localStorage.getItem("contacts"));
-    setContacts(storedContacts || initialContacts);
-  }, []);
+    if (contacts.length === 0) {
+      initialContacts.forEach((contact) => {
+        dispatch(addContact(contact));
+      });
+    }
+  }, [contacts, dispatch]);
 
-  const addContact = (newContact) => {
-    const updatedContacts = [...contacts, { ...newContact, id: nanoid() }];
-    setContacts(updatedContacts);
-    localStorage.setItem("contacts", JSON.stringify(updatedContacts));
+  const handleAddUser = (newUser) => {
+    dispatch(addContact(newUser));
   };
 
-  const deleteContact = (id) => {
-    const updatedContacts = contacts.filter((contact) => contact.id !== id);
-    setContacts(updatedContacts);
-    localStorage.setItem("contacts", JSON.stringify(updatedContacts));
-  };
-
-  const handleFilterChange = (event) => {
-    setFilter(event.target.value);
+  const handleFilterChange = (filter) => {
+    dispatch(changeFilter(filter));
   };
 
   const filteredContacts = contacts.filter((contact) =>
@@ -43,14 +42,9 @@ function App() {
   return (
     <div>
       <h1>Phonebook</h1>
-      <ContactForm onSubmit={addContact} />
-      <SearchBox value={filter} onChange={handleFilterChange} />
-      <ContactList
-        contacts={filteredContacts}
-        onDeleteContact={deleteContact}
-      />
+      <ContactForm onAdd={handleAddUser} />
+      <SearchBox filter={filter} onFilterChange={handleFilterChange} />
+      <ContactList contacts={filteredContacts} />
     </div>
   );
 }
-
-export default App;
